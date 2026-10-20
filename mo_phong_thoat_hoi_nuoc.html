@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô phỏng thoát hơi nước ở thực vật</title>
+  <style>
+    :root {
+      --green: #287a4b;
+      --green-light: #eaf6ed;
+      --ink: #203329;
+      --muted: #5e7065;
+      --border: #d7e4da;
+      --bg: #f5faf6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    main { max-width: 980px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    .intro { color: var(--muted); margin: 0 0 22px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+    .panel {
+      background: white; border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; box-shadow: 0 4px 14px rgba(25, 70, 40, .05);
+    }
+    h2 { margin: 0 0 16px; font-size: 1.15rem; }
+    .control { margin: 0 0 22px; }
+    .control:last-child { margin-bottom: 0; }
+    .label-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .label-row label { font-weight: 650; }
+    output { font-weight: 750; color: var(--green); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; accent-color: var(--green); cursor: pointer; }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; }
+    .result { background: var(--green-light); border-radius: 12px; padding: 16px; margin-bottom: 18px; }
+    .result-label { color: #42634e; font-size: .9rem; }
+    .rate { color: var(--green); font-size: 2.2rem; font-weight: 800; line-height: 1.2; margin: 4px 0; }
+    .status { display: inline-block; border-radius: 999px; padding: 5px 11px; background: #edf2ee; font-weight: 750; margin: 2px 0 8px; }
+    .plant-wrap { display: flex; align-items: center; justify-content: center; min-height: 155px; background: #f8fcf8; border: 1px dashed var(--border); border-radius: 12px; margin: 12px 0; }
+    .plant { font-size: 4.5rem; filter: saturate(1.1); }
+    .droplets { color: #348bd0; letter-spacing: 5px; font-size: 1.2rem; min-height: 26px; text-align: center; }
+    .explain { color: var(--muted); margin: 8px 0 0; font-size: .94rem; }
+    canvas { display: block; width: 100%; height: 220px; border: 1px solid var(--border); border-radius: 10px; }
+    .table-wrap { overflow-x: auto; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #e6eee8; }
+    th { color: var(--muted); font-weight: 650; }
+    .note { color: var(--muted); font-size: .83rem; margin-top: 14px; }
+    button { border: 1px solid var(--border); border-radius: 9px; padding: 8px 12px; background: white; color: var(--ink); cursor: pointer; }
+    button:hover { background: var(--green-light); }
+    @media (max-width: 700px) {
+      body { padding: 14px; }
+      .layout { grid-template-columns: 1fr; }
+      .panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🌿 Mô phỏng thoát hơi nước ở thực vật</h1>
+  <p class="intro">Thay đổi ánh sáng, gió và độ ẩm để quan sát tốc độ thoát hơi nước cùng trạng thái khí khổng.</p>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>1. Điều chỉnh điều kiện môi trường</h2>
+      <div class="control">
+        <div class="label-row">
+          <label for="light">☀️ Ánh sáng</label>
+          <output id="lightOut" for="light">60%</output>
+        </div>
+        <input id="light" type="range" min="0" max="100" value="60" step="1">
+        <div class="range-ends"><span>0%</span><span>100%</span></div>
+      </div>
+      <div class="control">
+        <div class="label-row">
+          <label for="wind">💨 Tốc độ gió</label>
+          <output id="windOut" for="wind">4 m/s</output>
+        </div>
+        <input id="wind" type="range" min="0" max="10" value="4" step="0.1">
+        <div class="range-ends"><span>0 m/s</span><span>10 m/s</span></div>
+      </div>
+      <div class="control">
+        <div class="label-row">
+          <label for="humidity">💧 Độ ẩm không khí</label>
+          <output id="humidityOut" for="humidity">50%</output>
+        </div>
+        <input id="humidity" type="range" min="20" max="90" value="50" step="1">
+        <div class="range-ends"><span>20%</span><span>90%</span></div>
+      </div>
+      <p class="note">Các thanh trượt cập nhật kết quả ngay khi cậu thay đổi thông số.</p>
+    </section>
+
+    <section class="panel">
+      <h2>2. Kết quả mô phỏng</h2>
+      <div class="result">
+        <div class="result-label">Tốc độ thoát hơi nước ước tính</div>
+        <div class="rate"><span id="rate">—</span> <span style="font-size:1rem">mg/h</span></div>
+        <div>Trạng thái khí khổng: <span class="status" id="status">—</span></div>
+        <div class="plant-wrap"><div class="plant" id="plant" aria-label="Hình minh họa cây">🪴</div></div>
+        <div class="droplets" id="droplets" aria-hidden="true">💧 💧</div>
+        <p class="explain" id="description" aria-live="polite"></p>
+      </div>
+      <h2>Biểu đồ tốc độ theo từng lần thay đổi</h2>
+      <canvas id="chart" width="600" height="220" aria-label="Biểu đồ đường tốc độ thoát hơi nước" role="img"></canvas>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lần đo</th><th>Ánh sáng</th><th>Gió</th><th>Độ ẩm</th><th>Tốc độ (mg/h)</th></tr></thead>
+          <tbody id="history"></tbody>
+        </table>
+      </div>
+      <p class="note">Lưu ý: Đây là mô hình minh họa để học tập, không phải số liệu đo thực nghiệm. Kết quả phụ thuộc vào công thức giả lập bên dưới.</p>
+      <button id="reset" type="button">Đặt lại mô phỏng</button>
+    </section>
+  </div>
+</main>
+
+<script>
+  const light = document.getElementById('light');
+  const wind = document.getElementById('wind');
+  const humidity = document.getElementById('humidity');
+  const lightOut = document.getElementById('lightOut');
+  const windOut = document.getElementById('windOut');
+  const humidityOut = document.getElementById('humidityOut');
+  const rateEl = document.getElementById('rate');
+  const statusEl = document.getElementById('status');
+  const descriptionEl = document.getElementById('description');
+  const plantEl = document.getElementById('plant');
+  const dropletsEl = document.getElementById('droplets');
+  const historyEl = document.getElementById('history');
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+
+  let history = [];
+  let measurement = 0;
+
+  // Công thức giả lập:
+  // R = 20 + 0.8L + 4W, sau đó nhân với hệ số ảnh hưởng độ ẩm.
+  // L: ánh sáng (%); W: gió (m/s); H: độ ẩm (%).
+  // Ánh sáng và gió tăng làm R tăng; độ ẩm cao làm R giảm.
+  function calculateRate(L, W, H) {
+    const humidityFactor = 1.5 - H / 100; // từ 1.3 (ẩm 20%) đến 0.6 (ẩm 90%)
+    return Math.max(0, (20 + 0.8 * L + 4 * W) * humidityFactor);
+  }
+
+  function getStomataState(L, W, H) {
+    // Quy tắc trạng thái đơn giản, chỉ dùng để minh họa.
+    const score = 0.65 * L + 2.5 * W - 0.45 * (H - 50);
+    if (L < 10 || score < 15) {
+      return {
+        label: 'Đóng lại',
+        description: 'Ánh sáng yếu hoặc điều kiện tổng hợp chưa thuận lợi; mô hình giả định khí khổng đóng hoặc gần đóng.',
+        plant: '🪴',
+        droplets: '·'
+      };
+    }
+    if (score >= 48 && L >= 35 && H < 75) {
+      return {
+        label: 'Mở rộng',
+        description: 'Ánh sáng tương đối mạnh và không khí không quá ẩm; mô hình giả định khí khổng mở rộng, hơi nước thoát ra nhiều hơn.',
+        plant: '🌿',
+        droplets: '💧 💧 💧 💧'
+      };
+    }
+    return {
+      label: 'Hé mở',
+      description: 'Khí khổng được mô phỏng ở trạng thái hé mở; tốc độ thoát hơi nước chịu ảnh hưởng đồng thời của ánh sáng, gió và độ ẩm.',
+      plant: '🌱',
+      droplets: '💧 💧'
+    };
+  }
+
+  function update() {
+    const L = Number(light.value);
+    const W = Number(wind.value);
+    const H = Number(humidity.value);
+    const rate = calculateRate(L, W, H);
+    const state = getStomataState(L, W, H);
+
+    lightOut.value = `${L}%`;
+    windOut.value = `${W.toFixed(1)} m/s`;
+    humidityOut.value = `${H}%`;
+    rateEl.textContent = rate.toFixed(1);
+    statusEl.textContent = state.label;
+    descriptionEl.textContent = state.description;
+    plantEl.textContent = state.plant;
+    dropletsEl.textContent = state.droplets;
+
+    measurement += 1;
+    history.push({ measurement, L, W, H, rate });
+    if (history.length > 12) history.shift();
+    renderHistory();
+    drawChart();
+  }
+
+  function renderHistory() {
+    historyEl.innerHTML = '';
+    [...history].reverse().forEach(item => {
+      const tr = document.createElement('tr');
+      [item.measurement, `${item.L}%`, `${item.W.toFixed(1)} m/s`, `${item.H}%`, item.rate.toFixed(1)]
+        .forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+      historyEl.appendChild(tr);
+    });
+  }
+
+  function drawChart() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(300, Math.round(rect.width * dpr));
+    canvas.height = Math.round(220 * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const width = canvas.width / dpr;
+    const height = 220;
+    const pad = { left: 48, right: 16, top: 18, bottom: 34 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const maxRate = Math.max(50, ...history.map(d => d.rate)) * 1.12;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#e1ebe3';
+    ctx.fillStyle = '#5e7065';
+
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + plotH * i / 4;
+      const value = maxRate * (1 - i / 4);
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(width - pad.right, y); ctx.stroke();
+      ctx.fillText(value.toFixed(0), 7, y + 4);
+    }
+    ctx.fillText('Lần đo', width / 2 - 15, height - 7);
+    ctx.save();
+    ctx.translate(13, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('mg/h', 0, 0);
+    ctx.restore();
+
+    if (!history.length) return;
+    const x = i => history.length === 1 ? pad.left + plotW / 2 : pad.left + plotW * i / (history.length - 1);
+    const y = rate => pad.top + plotH * (1 - rate / maxRate);
+
+    ctx.strokeStyle = '#287a4b';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    history.forEach((item, i) => i === 0 ? ctx.moveTo(x(i), y(item.rate)) : ctx.lineTo(x(i), y(item.rate)));
+    ctx.stroke();
+
+    history.forEach((item, i) => {
+      ctx.beginPath();
+      ctx.fillStyle = '#287a4b';
+      ctx.arc(x(i), y(item.rate), 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  [light, wind, humidity].forEach(el => el.addEventListener('input', update));
+  document.getElementById('reset').addEventListener('click', () => {
+    light.value = 60;
+    wind.value = 4;
+    humidity.value = 50;
+    history = [];
+    measurement = 0;
+    update();
+  });
+  window.addEventListener('resize', drawChart);
+  update();
+</script>
+</body>
+</html>
